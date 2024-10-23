@@ -9,7 +9,6 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -55,7 +54,7 @@ public class Main extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         primaryStage.setResizable(true);
-        ButtonsHBox.setAlignment(Pos.CENTER);
+        ButtonsHBox.setAlignment(Pos.BASELINE_CENTER);
         primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> {
             double newHeight = newVal.doubleValue();
             primaryStage.setHeight(newHeight);
@@ -70,7 +69,7 @@ public class Main extends Application {
         Logo.setFitHeight(scene.getHeight());
         Logo.setFitWidth(scene.getWidth());
         Logo.preserveRatioProperty();
-        primaryStage.setTitle("Blackjack");
+        primaryStage.setTitle("Blackjack by Lolo");
 
         PauseTransition pause = new PauseTransition(Duration.seconds(3));
 
@@ -81,6 +80,8 @@ public class Main extends Application {
 
         pause.play();
 
+        CrupierCardsHBox.setAlignment(Pos.CENTER);
+        PlayerHandsBox.setAlignment(Pos.CENTER);
         player.newHand(deck.dealCard(),bet);
         player.hands.get(player.currentHand).add(deck.dealCard());
         balance -= bet;
@@ -96,10 +97,10 @@ public class Main extends Application {
         coveredCard.setFitHeight(153);
         coveredCard.setFitWidth(100);
         CrupierCardsHBox.getChildren().add(coveredCard);
+        updateUI();
         if (player.hands.get(player.currentHand).blackjack){
             endGame();
         }
-        else updateUI();
 
         HitButton.setOnAction(e -> {
            player.hands.get(player.currentHand).add(deck.dealCard());
@@ -180,8 +181,14 @@ public class Main extends Application {
             coveredCard.setFitHeight(153);
             coveredCard.setFitWidth(100);
             CrupierCardsHBox.getChildren().add(coveredCard);
-            updateUI();
-            RestartButton.setVisible(false);
+            if (player.hands.get(player.currentHand).blackjack){
+                updateUI();
+                endGame();
+            }
+            else{
+                RestartButton.setVisible(false);
+                updateUI();
+            }
         });
 
         InsuranceButton.setOnAction(e -> {
@@ -211,6 +218,7 @@ public class Main extends Application {
                newCard.setFitWidth(100);
                hBox.getChildren().add(newCard);
             }
+            hBox.setAlignment(Pos.CENTER);
             PlayerHandsBox.getChildren().add(hBox);
         }
 
@@ -295,4 +303,3 @@ public class Main extends Application {
 
     public static void main(String[] args) {launch(args);}
 }
-
