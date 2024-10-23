@@ -2,13 +2,13 @@ import Cards.Card;
 import Cards.Deck;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -27,6 +27,8 @@ public class Main extends Application {
     Player player = new Player();
     Deck deck = new Deck();
     CrupierHand crupier = new CrupierHand(deck.dealCard());
+    PauseTransition CrupierPause = new PauseTransition(Duration.seconds(3));
+
 
     /* Frontend */
     Label balanceLabel = new Label();
@@ -46,6 +48,7 @@ public class Main extends Application {
     ImageView coveredCard;
     ImageView Logo = new ImageView(new Image(Main.class.getResourceAsStream("logo.png")));
 
+
     @Override
     public void start(Stage primaryStage) {
         layout = new VBox(Logo);
@@ -54,7 +57,7 @@ public class Main extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         primaryStage.setResizable(true);
-
+        ButtonsHBox.setAlignment(Pos.BASELINE_CENTER);
         primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> {
             double newHeight = newVal.doubleValue();
             primaryStage.setHeight(newHeight);
@@ -69,17 +72,20 @@ public class Main extends Application {
         Logo.setFitHeight(scene.getHeight());
         Logo.setFitWidth(scene.getWidth());
         Logo.preserveRatioProperty();
-        primaryStage.setTitle("Blackjack");
+        primaryStage.setTitle("Blackjack by Lolo");
 
         PauseTransition pause = new PauseTransition(Duration.seconds(3));
 
         pause.setOnFinished(event -> {
-            layout = new VBox(balanceLabel,insuranceLabel, playerHandsHBox, crupierLabel,CrupierCardsHBox, PlayerHandsBox,ButtonsHBox, resultVBox, RestartButton);
+            layout = new VBox(balanceLabel,insuranceLabel, playerHandsHBox,CrupierCardsHBox, PlayerHandsBox,ButtonsHBox, resultVBox, RestartButton);
             scene.setRoot(layout);
         });
 
         pause.play();
-
+        crupierLabel.getStyleClass().add("curved-box");
+        balanceLabel.getStyleClass().add("curved-box");
+        CrupierCardsHBox.setAlignment(Pos.CENTER);
+        PlayerHandsBox.setAlignment(Pos.CENTER);
         player.newHand(deck.dealCard(),bet);
         player.hands.get(player.currentHand).add(deck.dealCard());
         balance -= bet;
@@ -94,11 +100,12 @@ public class Main extends Application {
         coveredCard = new ImageView(new Image(getClass().getResourceAsStream("/Cards/resources/PNG/purple_back.png")));
         coveredCard.setFitHeight(153);
         coveredCard.setFitWidth(100);
-        CrupierCardsHBox.getChildren().add(coveredCard);
+        CrupierCardsHBox.getChildren().add(1, coveredCard);
+        CrupierCardsHBox.getChildren().add(2, crupierLabel);
+        updateUI();
         if (player.hands.get(player.currentHand).blackjack){
             endGame();
         }
-        else updateUI();
 
         HitButton.setOnAction(e -> {
            player.hands.get(player.currentHand).add(deck.dealCard());
@@ -179,8 +186,15 @@ public class Main extends Application {
             coveredCard.setFitHeight(153);
             coveredCard.setFitWidth(100);
             CrupierCardsHBox.getChildren().add(coveredCard);
-            updateUI();
-            RestartButton.setVisible(false);
+            CrupierCardsHBox.getChildren().add(crupierLabel);
+            if (player.hands.get(player.currentHand).blackjack){
+                updateUI();
+                endGame();
+            }
+            else{
+                RestartButton.setVisible(false);
+                updateUI();
+            }
         });
 
         InsuranceButton.setOnAction(e -> {
@@ -210,22 +224,20 @@ public class Main extends Application {
                newCard.setFitWidth(100);
                hBox.getChildren().add(newCard);
             }
+            Label sumLabel = new Label(""+pH.sum);
+            sumLabel.getStyleClass().add("curved-box");
+            hBox.getChildren().add(sumLabel);
+            hBox.setAlignment(Pos.CENTER);
             PlayerHandsBox.getChildren().add(hBox);
         }
 
         insuranceLabel.setVisible(hasInsurance);
 
         // Update the player's balance
-        balanceLabel.setText("Balance: " + balance);
+        balanceLabel.setText("Balance: $" + balance);
 
         // Update the crupier's sum
-        crupierLabel.setText("Crupier Sum: " + crupier.sum);
-
-        // Clear the player's hands and replace them with updated ones
-        playerHandsHBox.getChildren().clear();
-        for (PlayerHand pH : player.hands){
-            playerHandsHBox.getChildren().add(new Label(pH.toString()));
-        }
+        crupierLabel.setText(""+crupier.sum);
 
         // Check if the player can keep hitting
         if (player.hands.get(player.currentHand).keepsPlaying()){
@@ -255,15 +267,20 @@ public class Main extends Application {
         SplitButton.setDisable(true);
         HitButton.setDisable(true);
 
-        CrupierCardsHBox.getChildren().remove(1);
+        CrupierCardsHBox.getChildren().remove(coveredCard);
+        int i = 1;
+
+        CrupierPause.play();
+
         while (crupier.keepsPlaying()){
+            CrupierPause.play();
             Card newCard = deck.dealCard();
             crupier.add(newCard);
             ImageView newImageCard = new ImageView(newCard.image);
             newImageCard.setFitHeight(153);
             newImageCard.setFitWidth(100);
-            CrupierCardsHBox.getChildren().add(newImageCard);
-            crupierLabel.setText("Crupier Sum: " + crupier.sum);
+            CrupierCardsHBox.getChildren().add(i++, newImageCard);
+            crupierLabel.setText("" + crupier.sum);
         }
 
         for (PlayerHand pH : player.hands){
@@ -294,4 +311,3 @@ public class Main extends Application {
 
     public static void main(String[] args) {launch(args);}
 }
-

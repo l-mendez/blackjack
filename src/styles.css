@@ -11,7 +11,7 @@
 
 /* Base text styles */
 .text {
-    -fx-font-family: "Arial"; /* Change to any classic font */
+    -fx-font-family: "Baskerville"; /* Change to any classic font */
     -fx-font-size: 16px; /* Base font size */
     -fx-text-fill: #FFFFFF; /* Dark gray text color for readability */
 }
@@ -23,6 +23,15 @@
     -fx-text-fill: #FFFFFF; /* Black text color */
     -fx-background-color: #f8f8f8; /* Light background for text area */
     -fx-padding: 10; /* Padding inside the text area */
+}
+
+.curved-box {
+    -fx-background-color: #d3d3d3;    /* Gray background */
+    -fx-background-radius: 15px;      /* Curved edges */
+    -fx-padding: 10px 20px;           /* Padding around the text */
+    -fx-text-fill: #333333;           /* Text color (dark gray) */
+    -fx-font-size: 16px; /* Font size */
+    -fx-opacity: 0.5;
 }
 
 /* Base button styles */
