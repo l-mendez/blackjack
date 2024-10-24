@@ -403,10 +403,6 @@ public class Main extends Application {
         maxCardAmount = Math.max(maxCardAmount, crupier.amountCards);
 
         double newWidth = Math.min  (2 * cardWidth/(player.hands.size()+1),(layout.getWidth()-100)/maxCardAmount);
-        System.out.println(layout.getWidth());
-        System.out.println("option1");
-        System.out.println(2 * cardWidth/(player.hands.size()+1));
-        System.out.println("option2");
         System.out.println((layout.getWidth()-15)/(maxCardAmount));
         for (ImageView iv : CardArrayList){
             iv.setFitHeight(newWidth * 1.53);
