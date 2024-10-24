@@ -214,7 +214,7 @@ public class Main extends Application {
         });
 
         RestartButton.setOnAction(e -> {
-            OptionsHBox.getChildren().add(ChangeBetButton);
+            if (!OptionsHBox.getChildren().contains(ChangeBetButton)) OptionsHBox.getChildren().add(ChangeBetButton);
             hasInsurance=false;
             bet =(int)slider.getValue();
             slider.setVisible(false);
