@@ -31,6 +31,7 @@ public class Deck {
 
     public Card dealCard() {
         if (!cards.isEmpty()) {
+            //return new Card(Rank.ACE,Suit.CLUB);
             return cards.removeLast();
         }
         return null;  // Deck is empty

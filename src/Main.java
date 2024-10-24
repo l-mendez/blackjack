@@ -28,6 +28,9 @@ public class Main extends Application {
     PauseTransition CrupierPause = new PauseTransition(Duration.seconds(3));
 
     /* Frontend */
+    ArrayList<ImageView> CardArrayList = new ArrayList<>();
+    double cardHeight = 115, cardWidth = 75;
+    double buttonsHeight, buttonsWidth;
     Button HitButton = new Button("Hit");
     Button StandButton = new Button("Stand");
     Button InsuranceButton = new Button("Insurance");
@@ -75,12 +78,26 @@ public class Main extends Application {
 
         // The window is always square
         primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> {
-            double newHeight = newVal.doubleValue();
-            primaryStage.setHeight(newHeight);
-        });
-        primaryStage.heightProperty().addListener((obs, oldVal, newVal) -> {
             double newWidth = newVal.doubleValue();
-            primaryStage.setWidth(newWidth);
+            //layout.setPrefWidth(newWidth);
+            primaryStage.setHeight(newWidth);
+            double ratio = newVal.doubleValue()/oldVal.doubleValue();
+            cardHeight*=ratio;
+            cardWidth*=ratio;
+            for (ImageView iv : CardArrayList){
+                iv.setFitHeight(cardHeight);
+                iv.setFitWidth(cardWidth);
+            }
+
+        });
+
+        primaryStage.heightProperty().addListener((obs, oldVal, newVal) -> {
+            double newHeight = newVal.doubleValue();
+            primaryStage.setWidth(newHeight);
+            double ratio = newHeight/oldVal.doubleValue();
+            cardHeight*=ratio;
+            cardWidth*=ratio;
+            resize();
         });
 
         Logo.setFitHeight(LogoScene.getHeight());
@@ -142,13 +159,15 @@ public class Main extends Application {
         CrupierCardsHBox.getChildren().clear();
         for (Card card : crupier.cards){
             ImageView newCard = new ImageView(card.image);
-            newCard.setFitHeight(153);
-            newCard.setFitWidth(100);
+            newCard.setFitHeight(cardHeight);
+            newCard.setFitWidth(cardWidth);
+            CardArrayList.add(newCard);
             CrupierCardsHBox.getChildren().add(newCard);
         }
         coveredCard = new ImageView(new Image(getClass().getResourceAsStream("/Cards/resources/PNG/purple_back.png")));
-        coveredCard.setFitHeight(153);
-        coveredCard.setFitWidth(100);
+        CardArrayList.add(coveredCard);
+        coveredCard.setFitHeight(cardHeight);
+        coveredCard.setFitWidth(cardWidth);
         CrupierCardsHBox.getChildren().add(1, coveredCard);
         CrupierCardsHBox.getChildren().add(2, crupierLabel);
 
@@ -214,6 +233,7 @@ public class Main extends Application {
         });
 
         RestartButton.setOnAction(e -> {
+            CardArrayList = new ArrayList<>();
             if (!OptionsHBox.getChildren().contains(ChangeBetButton)) OptionsHBox.getChildren().add(ChangeBetButton);
             hasInsurance=false;
             bet =(int)slider.getValue();
@@ -228,13 +248,15 @@ public class Main extends Application {
             CrupierCardsHBox.getChildren().clear();
             for (Card card : crupier.cards){
                 ImageView newCard = new ImageView(card.image);
-                newCard.setFitHeight(153);
-                newCard.setFitWidth(100);
+                newCard.setFitHeight(cardHeight);
+                newCard.setFitWidth(cardWidth);
+                CardArrayList.add(newCard);
                 CrupierCardsHBox.getChildren().add(newCard);
             }
             coveredCard = new ImageView(new Image(getClass().getResourceAsStream("/Cards/resources/PNG/purple_back.png")));
-            coveredCard.setFitHeight(153);
-            coveredCard.setFitWidth(100);
+            coveredCard.setFitHeight(cardHeight);
+            coveredCard.setFitWidth(cardWidth);
+            CardArrayList.add(coveredCard);
             CrupierCardsHBox.getChildren().add(coveredCard);
             CrupierCardsHBox.getChildren().add(crupierLabel);
             if (player.hands.get(player.currentHand).blackjack){
@@ -278,9 +300,10 @@ public class Main extends Application {
             HBox hBox = new HBox();
             for (Card card : pH.cards){
                ImageView newCard = new ImageView(card.image);
-               newCard.setFitHeight(153);
-               newCard.setFitWidth(100);
+               newCard.setFitHeight(cardHeight);
+               newCard.setFitWidth(cardWidth);
                hBox.getChildren().add(newCard);
+               CardArrayList.add(newCard);
             }
             Label sumLabel = new Label(pH.sum+ (pH.aceAmount>0? "/%d".formatted(pH.sum-10) : ""));
             sumLabel.getStyleClass().add("curved-box");
@@ -316,6 +339,7 @@ public class Main extends Application {
                 SplitButton.setDisable(false);
             }
         }
+        resize();
     }
 
     public void endGame(){
@@ -333,12 +357,14 @@ public class Main extends Application {
             Card newCard = deck.dealCard();
             crupier.add(newCard);
             ImageView newImageCard = new ImageView(newCard.image);
-            newImageCard.setFitHeight(153);
-            newImageCard.setFitWidth(100);
+            resize();
+//            newImageCard.setFitHeight(2 * cardHeight/(player.hands.size()+1));
+//            newImageCard.setFitWidth(2 * cardWidth/(player.hands.size()+1));
+            CardArrayList.add(newImageCard);
             CrupierCardsHBox.getChildren().add(i++, newImageCard);
             crupierLabel.setText("" + crupier.sum);
         }
-
+        resize();
         for (PlayerHand pH : player.hands){
             String resultText;
             if (pH.blackjack && !crupier.blackjack){
@@ -369,5 +395,25 @@ public class Main extends Application {
         }
     }
 
+    public void resize(){
+        int maxCardAmount = 1;
+        for (PlayerHand pH : player.hands){
+            maxCardAmount = Math.max(maxCardAmount, pH.amountCards);
+        }
+        maxCardAmount = Math.max(maxCardAmount, crupier.amountCards);
+
+        double newWidth = Math.min  (2 * cardWidth/(player.hands.size()+1),(layout.getWidth()-100)/maxCardAmount);
+        System.out.println(layout.getWidth());
+        System.out.println("option1");
+        System.out.println(2 * cardWidth/(player.hands.size()+1));
+        System.out.println("option2");
+        System.out.println((layout.getWidth()-15)/(maxCardAmount));
+        for (ImageView iv : CardArrayList){
+            iv.setFitHeight(newWidth * 1.53);
+            iv.setFitWidth(newWidth);
+        }
+    }
+
+// VBox layout = new VBox(10, balanceLabel, insuranceLabel, crupierNameLabel, CrupierCardsHBox, playerNameLabel, PlayerHandsBox,ButtonsHBox, OptionsHBox);
     public static void main(String[] args) {launch(args);}
 }
