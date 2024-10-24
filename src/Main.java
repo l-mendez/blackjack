@@ -304,7 +304,39 @@ public class Main extends Application {
                 resize();
                 CrupierPause.play();
             }
+            else {
+                i = 1;
+                resize();
+                for (PlayerHand pH : player.hands) {
+                    String resultText;
+                    if (pH.blackjack && !crupier.blackjack){
+                        resultText = "Blackjack";
+                        balance += pH.bet*2.5;
+                    }
+                    else if ((crupier.blackjack && !pH.blackjack) || pH.sum>21 || (crupier.sum > pH.sum && crupier.sum<=21)){
+                        resultText = "Lost";
+                    }
+                    else if (pH.sum == crupier.sum){
+                        resultText = "Draw";
+                        balance+=pH.bet;
+                    }
+                    else{
+                        resultText = "Win";
+                        balance += 2 * pH.bet;
+                    }
+                }
+                if (hasInsurance && crupier.blackjack){
+                    balance += bet;
+                }
+                balanceLabel.setText("Balance: $" + (balance>=0 ? (int)balance : 0));
 
+                if (balance<=0){
+                    layout.getChildren().add(LoseLabel);
+                }
+                else {
+                    OptionsHBox.setVisible(true);
+                }
+            }
         });
 
     }
@@ -365,54 +397,14 @@ public class Main extends Application {
     }
 
     public void endGame() {
-        FlipSoundEffect.play();
         StandButton.setDisable(true);
         InsuranceButton.setDisable(true);
         DoubleButton.setDisable(true);
         SplitButton.setDisable(true);
         HitButton.setDisable(true);
 
-
+        FlipSoundEffect.play();
         CrupierPause.play();
-//        while (crupier.keepsPlaying()){
-//            Card newCard = deck.dealCard();
-//            crupier.add(newCard);
-//            ImageView newImageCard = new ImageView(newCard.image);
-//            resize();
-//            CardArrayList.add(newImageCard);
-//            CrupierCardsHBox.getChildren().add(i++, newImageCard);
-//            crupierLabel.setText("" + crupier.sum);
-//        }
-        i = 1;
-        resize();
-        for (PlayerHand pH : player.hands){
-            String resultText;
-            if (pH.blackjack && !crupier.blackjack){
-                resultText = "Blackjack";
-                balance += pH.bet*2.5;
-            }
-            else if ((crupier.blackjack && !pH.blackjack) || pH.sum>21 || (crupier.sum > pH.sum && crupier.sum<=21)){
-                resultText = "Lost";
-            }
-            else if (pH.sum == crupier.sum){
-                resultText = "Draw";
-                balance+=pH.bet;
-            }
-            else{
-                resultText = "Win";
-                balance += 2 * pH.bet;
-            }
-        }
-        if (hasInsurance && crupier.blackjack){
-            balance += bet;
-        }
-        balanceLabel.setText("Balance: $" + (balance>=0 ? (int)balance : 0));
-        if (balance<=0){
-            layout.getChildren().add(LoseLabel);
-        }
-        else {
-            OptionsHBox.setVisible(true);
-        }
     }
 
     public void resize(){
