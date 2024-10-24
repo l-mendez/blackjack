@@ -1,11 +1,13 @@
 import Cards.Card;
 import Cards.Deck;
+import com.sun.javafx.property.adapter.PropertyDescriptor;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
@@ -17,10 +19,6 @@ import java.util.ArrayList;
 
 public class Main extends Application {
 
-    /* Structure */
-    Scene scene;
-    VBox layout;
-
     /* Backend */
     boolean hasInsurance = false;
     double balance = 500, bet = 5;
@@ -29,67 +27,117 @@ public class Main extends Application {
     CrupierHand crupier = new CrupierHand(deck.dealCard());
     PauseTransition CrupierPause = new PauseTransition(Duration.seconds(3));
 
-
     /* Frontend */
-    Label balanceLabel = new Label();
-    Label crupierLabel = new Label();
-    Label insuranceLabel = new Label("Insurance");
-    HBox playerHandsHBox = new HBox();
     Button HitButton = new Button("Hit");
     Button StandButton = new Button("Stand");
     Button InsuranceButton = new Button("Insurance");
     Button DoubleButton = new Button("Double");
     Button SplitButton = new Button("Split");
-    HBox ButtonsHBox = new HBox(5, HitButton, StandButton, InsuranceButton, DoubleButton, SplitButton);
-    VBox resultVBox = new VBox();
     Button RestartButton = new Button("Restart");
+    Button ChangeBetButton = new Button("Change Bet");
+    Button playButton = new Button("Play");
+
+    HBox ButtonsHBox = new HBox(5, HitButton, StandButton, InsuranceButton, DoubleButton, SplitButton);
     HBox CrupierCardsHBox = new HBox();
-    VBox PlayerHandsBox = new VBox();
+    HBox OptionsHBox = new HBox(5, RestartButton, ChangeBetButton);
+
     ImageView coveredCard;
     ImageView Logo = new ImageView(new Image(Main.class.getResourceAsStream("logo.png")));
 
+    Label crupierNameLabel = new Label("Crupier");
+    Label playerNameLabel = new Label("Player");
+    Label balanceLabel = new Label();
+    Label crupierLabel = new Label();
+    Label insuranceLabel = new Label("Insurance");
+    Label valueLabel = new Label("Bet: $" + bet);
+    Label LoseLabel = new Label("You lose!");
+
+    Slider slider = new Slider();
+
+    VBox PlayerHandsBox = new VBox();
+    VBox MainMenu = new VBox(10, valueLabel, slider, playButton);
+    VBox LogoLayout = new VBox(Logo);
+    VBox layout = new VBox(10, balanceLabel, insuranceLabel, crupierNameLabel, CrupierCardsHBox, playerNameLabel, PlayerHandsBox,ButtonsHBox, OptionsHBox);
+
+    /* Structure */
+    Scene MainScene = new Scene(layout, 700, 700);
+    Scene MenuScene  = new Scene(MainMenu, 700, 700);;
+    Scene LogoScene = new Scene(LogoLayout, 700, 700);
 
     @Override
     public void start(Stage primaryStage) {
-        layout = new VBox(Logo);
-        scene = new Scene(layout, 700, 700);
-        scene.getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
-        primaryStage.setScene(scene);
         primaryStage.show();
+        MainScene.getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+        MenuScene.getStylesheets().add(getClass().getResource("styles.css").toExternalForm());
+        MainMenu.setAlignment(Pos.CENTER);
+        primaryStage.setScene(LogoScene);
         primaryStage.setResizable(true);
-        ButtonsHBox.setAlignment(Pos.BASELINE_CENTER);
+
+        // The window is always square
         primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> {
             double newHeight = newVal.doubleValue();
             primaryStage.setHeight(newHeight);
         });
-
         primaryStage.heightProperty().addListener((obs, oldVal, newVal) -> {
             double newWidth = newVal.doubleValue();
             primaryStage.setWidth(newWidth);
         });
 
-
-        Logo.setFitHeight(scene.getHeight());
-        Logo.setFitWidth(scene.getWidth());
+        Logo.setFitHeight(LogoScene.getHeight());
+        Logo.setFitWidth(LogoScene.getWidth());
         Logo.preserveRatioProperty();
         primaryStage.setTitle("Blackjack by Lolo");
 
         PauseTransition pause = new PauseTransition(Duration.seconds(3));
 
         pause.setOnFinished(event -> {
-            layout = new VBox(balanceLabel,insuranceLabel, playerHandsHBox,CrupierCardsHBox, PlayerHandsBox,ButtonsHBox, resultVBox, RestartButton);
-            scene.setRoot(layout);
+            primaryStage.setScene(MenuScene);
+            layout.setAlignment(Pos.CENTER);
         });
 
         pause.play();
+
+        slider.setMin(0);     // Minimum value
+        slider.setMax(balance);   // Maximum value
+        slider.setValue(bet);  // Initial value
+        slider.setMajorTickUnit(10);    // Major tick unit
+        slider.setMinorTickCount(5);    // Minor tick count
+        slider.setBlockIncrement(1);
+        slider.setLayoutY(primaryStage.getHeight()/2);
+
+        playButton.setOnAction(event -> {
+            primaryStage.setScene(MainScene);
+            bet=(int)slider.getValue();
+            balance -= bet;
+            layout.getChildren().addAll(slider, valueLabel);
+            slider.setVisible(false);
+            valueLabel.setVisible(false);
+            player.newHand(deck.dealCard(),bet);
+            player.hands.get(player.currentHand).add(deck.dealCard());
+            updateUI();
+            if (player.hands.get(player.currentHand).blackjack){
+                endGame();
+            }
+        });
+
+        slider.valueProperty().addListener((observable, oldValue, newValue) -> {
+            valueLabel.setText("Bet: $" + newValue.intValue());
+        });
+
+        LoseLabel.getStyleClass().add("curved-box");
+        valueLabel.getStyleClass().add("curved-box");
         crupierLabel.getStyleClass().add("curved-box");
         balanceLabel.getStyleClass().add("curved-box");
+        balanceLabel.setAlignment(Pos.TOP_LEFT);
+        crupierNameLabel.getStyleClass().add("curved-box");
+        crupierNameLabel.setAlignment(Pos.CENTER);
+        playerNameLabel.getStyleClass().add("curved-box");
+        playerNameLabel.setAlignment(Pos.CENTER);
         CrupierCardsHBox.setAlignment(Pos.CENTER);
         PlayerHandsBox.setAlignment(Pos.CENTER);
-        player.newHand(deck.dealCard(),bet);
-        player.hands.get(player.currentHand).add(deck.dealCard());
-        balance -= bet;
-        RestartButton.setVisible(false);
+        ButtonsHBox.setAlignment(Pos.BASELINE_CENTER);
+        OptionsHBox.setVisible(false);
+        OptionsHBox.setAlignment(Pos.BASELINE_CENTER);
         CrupierCardsHBox.getChildren().clear();
         for (Card card : crupier.cards){
             ImageView newCard = new ImageView(card.image);
@@ -102,10 +150,7 @@ public class Main extends Application {
         coveredCard.setFitWidth(100);
         CrupierCardsHBox.getChildren().add(1, coveredCard);
         CrupierCardsHBox.getChildren().add(2, crupierLabel);
-        updateUI();
-        if (player.hands.get(player.currentHand).blackjack){
-            endGame();
-        }
+
 
         HitButton.setOnAction(e -> {
            player.hands.get(player.currentHand).add(deck.dealCard());
@@ -168,12 +213,15 @@ public class Main extends Application {
         });
 
         RestartButton.setOnAction(e -> {
+            hasInsurance=false;
+            bet =(int)slider.getValue();
+            slider.setVisible(false);
+            valueLabel.setVisible(false);
             player = new Player();
             deck = new Deck();
             player.newHand(deck.dealCard(),bet);
             player.hands.get(player.currentHand).add(deck.dealCard());
             crupier = new CrupierHand(deck.dealCard());
-            resultVBox.getChildren().clear();
             balance -= bet;
             CrupierCardsHBox.getChildren().clear();
             for (Card card : crupier.cards){
@@ -192,9 +240,19 @@ public class Main extends Application {
                 endGame();
             }
             else{
-                RestartButton.setVisible(false);
+                OptionsHBox.setVisible(false);
+                ChangeBetButton.setVisible(true);
                 updateUI();
             }
+        });
+
+        ChangeBetButton.setOnAction(e -> {
+
+            slider.setVisible(true);
+            valueLabel.setVisible(true);
+            slider.setMax(balance);
+            slider.setValue(bet);
+            ChangeBetButton.setVisible(false);
         });
 
         InsuranceButton.setOnAction(e -> {
@@ -214,7 +272,6 @@ public class Main extends Application {
         HitButton.setDisable(true);
         StandButton.setDisable(false);
 
-
         PlayerHandsBox.getChildren().clear();
         for (PlayerHand pH : player.hands){
             HBox hBox = new HBox();
@@ -224,7 +281,7 @@ public class Main extends Application {
                newCard.setFitWidth(100);
                hBox.getChildren().add(newCard);
             }
-            Label sumLabel = new Label(""+pH.sum);
+            Label sumLabel = new Label(pH.sum+ (pH.aceAmount>0? "/%d".formatted(pH.sum-10) : ""));
             sumLabel.getStyleClass().add("curved-box");
             hBox.getChildren().add(sumLabel);
             hBox.setAlignment(Pos.CENTER);
@@ -234,7 +291,7 @@ public class Main extends Application {
         insuranceLabel.setVisible(hasInsurance);
 
         // Update the player's balance
-        balanceLabel.setText("Balance: $" + balance);
+        balanceLabel.setText("Balance: $" + (balance>=0 ? (int)balance : 0));
 
         // Update the crupier's sum
         crupierLabel.setText(""+crupier.sum);
@@ -245,7 +302,7 @@ public class Main extends Application {
         }
 
         // Check for insurance
-        if (crupier.sum==11 && !hasInsurance){
+        if (crupier.sum==11 && !hasInsurance && balance >= 2*bet){
             InsuranceButton.setDisable(false);
         }
 
@@ -269,8 +326,6 @@ public class Main extends Application {
 
         CrupierCardsHBox.getChildren().remove(coveredCard);
         int i = 1;
-
-        CrupierPause.play();
 
         while (crupier.keepsPlaying()){
             CrupierPause.play();
@@ -300,13 +355,17 @@ public class Main extends Application {
                 resultText = "Win";
                 balance += 2 * pH.bet;
             }
-            resultVBox.getChildren().add(new Label(pH + " " + resultText));
         }
         if (hasInsurance && crupier.blackjack){
             balance += bet;
         }
-        balanceLabel.setText("Balance: " + balance);
-        RestartButton.setVisible(true);
+        balanceLabel.setText("Balance: $" + (balance>=0 ? (int)balance : 0));
+        if (balance<=0){
+            layout.getChildren().add(LoseLabel);
+        }
+        else {
+            OptionsHBox.setVisible(true);
+        }
     }
 
     public static void main(String[] args) {launch(args);}
