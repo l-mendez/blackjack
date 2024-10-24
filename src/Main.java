@@ -104,6 +104,7 @@ public class Main extends Application {
         slider.setMinorTickCount(5);    // Minor tick count
         slider.setBlockIncrement(1);
         slider.setLayoutY(primaryStage.getHeight()/2);
+        slider.setMaxWidth(400);
 
         playButton.setOnAction(event -> {
             primaryStage.setScene(MainScene);
@@ -213,6 +214,7 @@ public class Main extends Application {
         });
 
         RestartButton.setOnAction(e -> {
+            OptionsHBox.getChildren().add(ChangeBetButton);
             hasInsurance=false;
             bet =(int)slider.getValue();
             slider.setVisible(false);
@@ -247,12 +249,11 @@ public class Main extends Application {
         });
 
         ChangeBetButton.setOnAction(e -> {
-
             slider.setVisible(true);
             valueLabel.setVisible(true);
             slider.setMax(balance);
             slider.setValue(bet);
-            ChangeBetButton.setVisible(false);
+            OptionsHBox.getChildren().remove(ChangeBetButton);
         });
 
         InsuranceButton.setOnAction(e -> {
