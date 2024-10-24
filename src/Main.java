@@ -12,6 +12,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.AudioClip;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -25,12 +26,16 @@ public class Main extends Application {
     Player player = new Player();
     Deck deck = new Deck();
     CrupierHand crupier = new CrupierHand(deck.dealCard());
-    PauseTransition CrupierPause = new PauseTransition(Duration.seconds(3));
+    PauseTransition CrupierPause = new PauseTransition(Duration.seconds(1));
+    int i = 1;
 
     /* Frontend */
     ArrayList<ImageView> CardArrayList = new ArrayList<>();
+
+    AudioClip DefaultSoundEffect = new AudioClip(getClass().getResource("/Cards/resources/SoundEffects/default.wav").toString());
+    AudioClip FlipSoundEffect = new AudioClip(getClass().getResource("/Cards/resources/SoundEffects/flipcard.wav").toString());
+
     double cardHeight = 115, cardWidth = 75;
-    double buttonsHeight, buttonsWidth;
     Button HitButton = new Button("Hit");
     Button StandButton = new Button("Stand");
     Button InsuranceButton = new Button("Insurance");
@@ -66,6 +71,7 @@ public class Main extends Application {
     Scene MainScene = new Scene(layout, 700, 700);
     Scene MenuScene  = new Scene(MainMenu, 700, 700);;
     Scene LogoScene = new Scene(LogoLayout, 700, 700);
+
 
     @Override
     public void start(Stage primaryStage) {
@@ -173,6 +179,7 @@ public class Main extends Application {
 
 
         HitButton.setOnAction(e -> {
+            DefaultSoundEffect.play();
            player.hands.get(player.currentHand).add(deck.dealCard());
            updateUI();
            if (!player.hands.get(player.currentHand).keepsPlaying()){
@@ -284,6 +291,21 @@ public class Main extends Application {
             updateUI();
         });
 
+        CrupierPause.setOnFinished(event->{
+            CrupierCardsHBox.getChildren().remove(coveredCard);
+            if (crupier.keepsPlaying()){
+                Card newCard = deck.dealCard();
+                crupier.add(newCard);
+                if (crupier.amountCards>2) DefaultSoundEffect.play();
+                ImageView newImageCard = new ImageView(newCard.image);
+                CardArrayList.add(newImageCard);
+                CrupierCardsHBox.getChildren().add(i++, newImageCard);
+                crupierLabel.setText("" + crupier.sum);
+                resize();
+                CrupierPause.play();
+            }
+
+        });
 
     }
 
@@ -342,28 +364,26 @@ public class Main extends Application {
         resize();
     }
 
-    public void endGame(){
+    public void endGame() {
+        FlipSoundEffect.play();
         StandButton.setDisable(true);
         InsuranceButton.setDisable(true);
         DoubleButton.setDisable(true);
         SplitButton.setDisable(true);
         HitButton.setDisable(true);
 
-        CrupierCardsHBox.getChildren().remove(coveredCard);
-        int i = 1;
 
-        while (crupier.keepsPlaying()){
-            CrupierPause.play();
-            Card newCard = deck.dealCard();
-            crupier.add(newCard);
-            ImageView newImageCard = new ImageView(newCard.image);
-            resize();
-//            newImageCard.setFitHeight(2 * cardHeight/(player.hands.size()+1));
-//            newImageCard.setFitWidth(2 * cardWidth/(player.hands.size()+1));
-            CardArrayList.add(newImageCard);
-            CrupierCardsHBox.getChildren().add(i++, newImageCard);
-            crupierLabel.setText("" + crupier.sum);
-        }
+        CrupierPause.play();
+//        while (crupier.keepsPlaying()){
+//            Card newCard = deck.dealCard();
+//            crupier.add(newCard);
+//            ImageView newImageCard = new ImageView(newCard.image);
+//            resize();
+//            CardArrayList.add(newImageCard);
+//            CrupierCardsHBox.getChildren().add(i++, newImageCard);
+//            crupierLabel.setText("" + crupier.sum);
+//        }
+        i = 1;
         resize();
         for (PlayerHand pH : player.hands){
             String resultText;
@@ -403,7 +423,6 @@ public class Main extends Application {
         maxCardAmount = Math.max(maxCardAmount, crupier.amountCards);
 
         double newWidth = Math.min  (2 * cardWidth/(player.hands.size()+1),(layout.getWidth()-100)/maxCardAmount);
-        System.out.println((layout.getWidth()-15)/(maxCardAmount));
         for (ImageView iv : CardArrayList){
             iv.setFitHeight(newWidth * 1.53);
             iv.setFitWidth(newWidth);
