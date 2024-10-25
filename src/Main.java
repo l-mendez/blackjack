@@ -1,7 +1,9 @@
 import Cards.Card;
 import Cards.Deck;
 import com.sun.javafx.property.adapter.PropertyDescriptor;
+import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
+import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -31,6 +33,8 @@ public class Main extends Application {
 
     /* Frontend */
     ArrayList<ImageView> CardArrayList = new ArrayList<>();
+    ArrayList<HBox> HBoxArrayList = new ArrayList<>();
+    ArrayList<Label> BetArrayList = new ArrayList<>();
 
     AudioClip DefaultSoundEffect = new AudioClip(getClass().getResource("/Cards/resources/SoundEffects/default.wav").toString());
     AudioClip FlipSoundEffect = new AudioClip(getClass().getResource("/Cards/resources/SoundEffects/flipcard.wav").toString());
@@ -51,6 +55,7 @@ public class Main extends Application {
 
     ImageView coveredCard;
     ImageView Logo = new ImageView(new Image(Main.class.getResourceAsStream("logo.png")));
+    ImageView BalanceChip = new ImageView(new Image(Main.class.getResourceAsStream("/Cards/resources/chip.png")));
 
     Label crupierNameLabel = new Label("Crupier");
     Label playerNameLabel = new Label("Player");
@@ -62,16 +67,18 @@ public class Main extends Application {
 
     Slider slider = new Slider();
 
+    HBox BalanceHBox = new HBox(BalanceChip, balanceLabel);
     VBox PlayerHandsBox = new VBox();
     VBox MainMenu = new VBox(10, valueLabel, slider, playButton);
     VBox LogoLayout = new VBox(Logo);
-    VBox layout = new VBox(10, balanceLabel, insuranceLabel, crupierNameLabel, CrupierCardsHBox, playerNameLabel, PlayerHandsBox,ButtonsHBox, OptionsHBox);
+    VBox layout = new VBox(10, BalanceHBox, insuranceLabel, crupierNameLabel, CrupierCardsHBox, playerNameLabel, PlayerHandsBox,ButtonsHBox, OptionsHBox);
 
     /* Structure */
     Scene MainScene = new Scene(layout, 700, 700);
     Scene MenuScene  = new Scene(MainMenu, 700, 700);;
     Scene LogoScene = new Scene(LogoLayout, 700, 700);
 
+    ParallelTransition ChipsTransition = new ParallelTransition();
 
     @Override
     public void start(Stage primaryStage) {
@@ -129,6 +136,17 @@ public class Main extends Application {
         slider.setLayoutY(primaryStage.getHeight()/2);
         slider.setMaxWidth(400);
 
+        BalanceHBox.setAlignment(Pos.CENTER);
+        BalanceHBox.setStyle("-fx-border-color: white; "   // White border
+                + "-fx-border-width: 2px; "    // Border width
+                + "-fx-background-radius: 15px;"
+                + "-fx-border-radius: 15px;"
+                + "-fx-background-color: #660000;"); // Black background
+        BalanceHBox.setMaxWidth(200);
+        BalanceChip.setFitWidth(50);
+        BalanceChip.setFitHeight(50);
+
+
         playButton.setOnAction(event -> {
             primaryStage.setScene(MainScene);
             bet=(int)slider.getValue();
@@ -151,8 +169,7 @@ public class Main extends Application {
         LoseLabel.getStyleClass().add("curved-box");
         valueLabel.getStyleClass().add("curved-box");
         crupierLabel.getStyleClass().add("curved-box");
-        balanceLabel.getStyleClass().add("curved-box");
-        balanceLabel.setAlignment(Pos.TOP_LEFT);
+        balanceLabel.getStyleClass().add("bigText");
         crupierNameLabel.getStyleClass().add("curved-box");
         crupierNameLabel.setAlignment(Pos.CENTER);
         playerNameLabel.getStyleClass().add("curved-box");
@@ -223,8 +240,8 @@ public class Main extends Application {
         SplitButton.setOnAction(e -> {
             balance -= bet;
             player.split();
-            player.hands.get(player.currentHand).add(deck.dealCard());
-            player.hands.get(player.currentHand+1).add(deck.dealCard());
+            player.hands.get(player.hands.size()-2).add(deck.dealCard());
+            player.hands.getLast().add(deck.dealCard());
 
             if (!player.hands.get(player.currentHand).keepsPlaying()){
                 player.currentHand++;
@@ -243,7 +260,7 @@ public class Main extends Application {
             CardArrayList = new ArrayList<>();
             if (!OptionsHBox.getChildren().contains(ChangeBetButton)) OptionsHBox.getChildren().add(ChangeBetButton);
             hasInsurance=false;
-            bet =(int)slider.getValue();
+            bet = Math.min ((int)slider.getValue(), balance);
             slider.setVisible(false);
             valueLabel.setVisible(false);
             player = new Player();
@@ -312,6 +329,14 @@ public class Main extends Application {
                     if (pH.blackjack && !crupier.blackjack){
                         resultText = "Blackjack";
                         balance += pH.bet*2.5;
+                        BetArrayList.get(i-1).setText(""+pH.bet*2.5);
+                        TranslateTransition transition = new TranslateTransition();
+                        transition.setNode(HBoxArrayList.get(i-1));
+                        transition.setDuration(Duration.seconds(1));
+                        transition.setByX(BalanceHBox.getLayoutX()-HBoxArrayList.get(i-1).getLayoutX());                     // Final X position (relative to start)
+                        transition.setByY(BalanceHBox.getLayoutY()-HBoxArrayList.get(i-1).getLayoutY());                 // Final Y position (relative to start)
+                        transition.setAutoReverse(false);           // No reverse animation
+                        ChipsTransition.getChildren().add(transition);
                     }
                     else if ((crupier.blackjack && !pH.blackjack) || pH.sum>21 || (crupier.sum > pH.sum && crupier.sum<=21)){
                         resultText = "Lost";
@@ -319,26 +344,41 @@ public class Main extends Application {
                     else if (pH.sum == crupier.sum){
                         resultText = "Draw";
                         balance+=pH.bet;
+                        TranslateTransition transition = new TranslateTransition();
+                        transition.setNode(HBoxArrayList.get(i-1));
+                        transition.setDuration(Duration.seconds(1));
+                        transition.setByX(BalanceHBox.getLayoutX()-HBoxArrayList.get(i-1).getLayoutX());                     // Final X position (relative to start)
+                        transition.setByY(BalanceHBox.getLayoutY()-HBoxArrayList.get(i-1).getLayoutY());
+                        transition.setAutoReverse(false);           // No reverse animation
+                        ChipsTransition.getChildren().add(transition);
                     }
                     else{
                         resultText = "Win";
                         balance += 2 * pH.bet;
+                        BetArrayList.get(i-1).setText(""+pH.bet*2);
+                        TranslateTransition transition = new TranslateTransition();
+                        transition.setNode(HBoxArrayList.get(i-1));
+                        transition.setDuration(Duration.seconds(1));
+                        transition.setByX(BalanceHBox.getLayoutX()-HBoxArrayList.get(i-1).getLayoutX());                     // Final X position (relative to start)
+                        transition.setByY(BalanceHBox.getLayoutY()-HBoxArrayList.get(i-1).getLayoutY());
+                        transition.setAutoReverse(false);           // No reverse animation
+                        ChipsTransition.getChildren().add(transition);
                     }
                 }
                 if (hasInsurance && crupier.blackjack){
                     balance += bet;
                 }
-                balanceLabel.setText("Balance: $" + (balance>=0 ? (int)balance : 0));
+                balanceLabel.setText("" + (balance>=0 ? (int)balance : 0));
 
                 if (balance<=0){
                     layout.getChildren().add(LoseLabel);
                 }
                 else {
                     OptionsHBox.setVisible(true);
+                    ChipsTransition.play();
                 }
             }
         });
-
     }
 
     public void updateUI(){
@@ -348,7 +388,7 @@ public class Main extends Application {
         SplitButton.setDisable(true);
         HitButton.setDisable(true);
         StandButton.setDisable(false);
-
+        HBoxArrayList.clear();
         PlayerHandsBox.getChildren().clear();
         for (PlayerHand pH : player.hands){
             HBox hBox = new HBox();
@@ -359,7 +399,16 @@ public class Main extends Application {
                hBox.getChildren().add(newCard);
                CardArrayList.add(newCard);
             }
+            ImageView PokerChip= new ImageView(new Image(getClass().getResourceAsStream("/Cards/resources/chip.png")));
+            PokerChip.setFitWidth(15);
+            PokerChip.setFitHeight(15);
+            Label BetLabel = new Label(""+(int)pH.bet);
             Label sumLabel = new Label(pH.sum+ (pH.aceAmount>0? "/%d".formatted(pH.sum-10) : ""));
+            HBox BetBox = new HBox(PokerChip, BetLabel);
+            BetBox.setAlignment(Pos.CENTER);
+            HBoxArrayList.add(BetBox);
+            BetArrayList.add(BetLabel);
+            hBox.getChildren().add(0, BetBox);
             sumLabel.getStyleClass().add("curved-box");
             hBox.getChildren().add(sumLabel);
             hBox.setAlignment(Pos.CENTER);
@@ -369,7 +418,7 @@ public class Main extends Application {
         insuranceLabel.setVisible(hasInsurance);
 
         // Update the player's balance
-        balanceLabel.setText("Balance: $" + (balance>=0 ? (int)balance : 0));
+        balanceLabel.setText("" + (balance>=0 ? (int)balance : 0));
 
         // Update the crupier's sum
         crupierLabel.setText(""+crupier.sum);
@@ -402,7 +451,6 @@ public class Main extends Application {
         DoubleButton.setDisable(true);
         SplitButton.setDisable(true);
         HitButton.setDisable(true);
-
         FlipSoundEffect.play();
         CrupierPause.play();
     }

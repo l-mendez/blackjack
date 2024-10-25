@@ -12,7 +12,13 @@
 /* Base text styles */
 .text {
     -fx-font-family: "Baskerville"; /* Change to any classic font */
-    -fx-font-size: 16px; /* Base font size */
+    -fx-font-size: 14px; /* Base font size */
+    -fx-text-fill: #FFFFFF; /* Dark gray text color for readability */
+}
+
+.bigText {
+    -fx-font-family: "Baskerville"; /* Change to any classic font */
+    -fx-font-size: 25px; /* Base font size */
     -fx-text-fill: #FFFFFF; /* Dark gray text color for readability */
 }
 
